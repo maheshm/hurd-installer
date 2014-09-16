@@ -1,0 +1,33 @@
+This is a Tiny Hurd LiveCD, it contains a variant of the GNU system.  
+The whole point is to boot with a minimal system and learn how things work.
+If you don't know what to do, try the hurd's 12-step programme.
+
+1. Put a translator on /tmp/hello
+	# settrans -a /tmp/hello /hurd/hello --contents="hello hurd
+	> "
+2. Try out the new translator
+	# cat /tmp/hello
+3. See the subhurd boot script
+	# cat /boot/subhurd.script
+4. Start a subhurd
+	# boot -D /tmp -I /boot/subhurd.script -Tdevice hd2
+5. See the pretty pr0cesses
+	# ps -ef
+6. Check to see if the hello translator is providing /tmp/hello
+	# cat /tmp/hello
+7. Put a translator on /tmp/hello
+	# settrans -a /tmp/hello /hurd/hello --contents="hello subhurd"
+8. Try out the new translator
+	# cat /tmp/hello 
+9. Change the translator's settings
+	# fsysopts /tmp/hello --contents="hello subhurd
+	> "
+10. Try out the revised translator
+	# cat /tmp/hello
+11. Exit the subhurd
+	# halt
+12. Check to see what /tmp/hello says
+	# cat /tmp/hello
+
+You've now completed the hurd's 12-step programme!
+Enjoy

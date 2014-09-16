@@ -1,0 +1,9 @@
+timeout 0
+default 0
+
+title  Boot the Hurd (hit 'e' and edit hd2 to be the device your cdrom is)
+root   (cd)
+kernel /boot/gnumach.gz root=device:hd2
+module /hurd/iso9660fs.static --multiboot-command-line=${kernel-command-line} --host-priv-port=${host-port} --device-master-port=${device-port} --exec-server-task=${exec-task} -T typed ${root} $(task-create) $(task-resume)
+module /lib/ld.so.1 /hurd/exec $(exec-task=task-create)
+

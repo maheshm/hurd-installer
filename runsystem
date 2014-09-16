@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+# This program is run by /hurd/init at boot time after the essential
+# servers are up, and is responsible for running the "userland" parts of a
+# normal system.  This includes running the single-user shell as well as a
+# multi-user system.  This program is expected never to exit.
+#
+#Mahesh M. - Kriyate - 2009
+#Has edited for the Live CD/Installer selection menu to be loaded.
+
+
+###
+### Where to find programs, etc.
+###
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
+# Shell used for normal single-user startup.
+SHELL=/bin/sh
+
+ 
+/hurd/mach-defpager
+
+settrans -a /servers/socket/local /hurd/firmlink /servers/socket/1
+settrans -a /servers/socket/1 /hurd/pflocal
+settrans -a /dev/null /hurd/null
+settrans -a /dev/zero /hurd/storeio -Tzero
+
+echo
+echo
+echo "What do you want to do?" 
+
+echo "1. Install GNU/Hurd."
+echo "2. Try it without installing (LiveCD)"
+echo "( 1/2 )"
+read a
+
+#echo $a
+#As of now no difference in 2 options since some problems were encountered. 
+#The scripts can be edited to obtain required results once problem is sorted out.
+
+case $a in
+	1) 	echo "Installing the system"
+		sh ramdskcreate.sh
+		;;
+	
+	2)	echo "Starting LiveCD"
+		sh ramdskcreate.sh
+		;;
+esac
+
+#You wont see this unless you kill the shell.
+#We dont want the system to be blank without a shell.
+
+while [ 1 ]; do
+	echo "spawning another shell."
+	exec $SHELL
+	echo "spawning another shell."
+done

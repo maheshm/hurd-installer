@@ -1,0 +1,193 @@
+#!/bin/bash
+#
+# to remaster a new hurd live cd, just run this script.
+
+
+# Mahesh M - Kriyate - 2009
+# The script has been modified to keep things in one place. This script creates an iso live cd.
+# Contact mahesh@kriyate.in for assistance with this script.
+#
+
+mkisofs=`which mkisofs`
+wget=`which wget`
+if [ "x$mkisofs" == "x" ]; then
+echo "You need to install mkisofs first"
+exit 1
+fi
+if [ "x$wget" == "x" ]; then
+echo "You need to install wget first"
+exit 1
+fi
+whoami=`whoami`
+if [ "x$whoami" != "xroot" ]; then
+echo You must run this script as root to retain permissions in the tarball
+exit 1
+fi
+
+if [ ! -f menu.lst ]; then
+echo "File missing. menu.lst"
+fi
+if [ ! -f runsystem ]; then
+echo "File missing. runsystem"
+fi
+
+if [ ! -f rc ]; then
+echo "File missing. rc"
+fi
+
+if [ ! -f stage2_eltorito ]; then
+echo "File missing. stage2_eltorito"
+fi
+if [ ! -f iso9660fs.static ]; then
+echo "File missing. iso9660fs.static"
+fi
+if [ ! -f gnumach.gz ]; then
+echo "File missing. gnumach.gz"
+fi
+if [ ! -f README.1st ]; then
+echo "File missing. readme.1st"
+fi
+if [ ! -f README.2nd ]; then
+echo "File missing. readme.2nd"
+fi
+
+#run as root to retain root permissions in tarball
+#directory iso shall be used to dumb the files that has to be put into LiveCD
+mkdir -p iso
+
+#tinygnu.tar.gz contains a working GNU/Hurd systems files. Make sure its the bare minimum. It has to fit into RAM. Atleast some part of it!!
+cd iso
+tar --preserve -zxvf ../tinygnu.tar.gz
+cd ..
+
+#make sure ld.so.1 isn't a symlink. It creates problem in CD.
+rm -vf iso/lib/ld.so
+rm -vf iso/lib/ld.so.1
+cp -vp iso/lib/ld-2.6.1.so  iso/lib/ld.so.1
+cp -vp iso/lib/ld-2.6.1.so  iso/lib/ld.so
+
+#copy in non-standard gnumach.gz if present. NOT REQUIRED.
+#if [ -f gnumach.gz ] ; then
+#  cp -v gnumach.gz iso/boot/
+#fi
+
+#get rid of iso/dev/*
+rm -vrf iso/dev/*
+
+#get rid of iso/lost+found/*
+rm -rf iso/lost+found/*
+
+#get rid of iso/var/cache
+rm -vrf iso/var/cache/*
+
+#get rid of iso/var/lib/apt/lists/ftp*
+rm -vf iso/var/lib/apt/lists/ftp*
+
+#get rid of iso/var/lib/dpkg/info
+rm -vrf iso/var/lib/dpkg/info/*
+
+#get rid of iso/share/locale/*
+rm -rf iso/share/locale/*
+
+#get rid of iso/share/doc/*
+rm -vrf iso/share/doc/*
+
+#get rid of iso/share/zoneinfo/*
+rm -rf iso/share/zoneinfo/*
+
+#get rid of iso/etc/resolv.conf
+rm -vf iso/etc/resolv.conf
+
+#touch up some log files
+mkdir -p iso/var/log/news/
+touch iso/var/log/news/news.err
+touch iso/var/log/news/news.crit
+touch iso/var/log/news/news.notice
+
+#get rid of iso/servers/*
+#rm -vrf iso/servers/*
+
+#create servers tree. UNHASH ALL THESE IF YOU DONT HAVE THEM IN THE tinygnu TAR FILE
+#touch iso/servers/exec
+#touch iso/servers/password
+#touch iso/servers/proc
+#touch iso/servers/default-pager
+#touch iso/servers/crash
+#touch iso/servers/crash-dump-core
+#touch iso/servers/crash-kill
+#touch iso/servers/crash-suspend
+#mkdir -p iso/servers/socket
+#touch iso/servers/socket/inet # for /hurd/symlink to sit on.  points to 2
+#touch iso/servers/socket/local #for /hurd/symlink to sit on.  points to 1
+#touch iso/servers/socket/1 # for /hurd/pflocal to sit on. 
+#touch iso/servers/socket/2 #for /hurd/pfinet to sit on.
+
+#get rid of iso/lost+found
+rm -vrf iso/lost+found
+
+#copy bootable isofs translator into iso. UNHASH ALL THESE IF YOU DONT HAVE THEM IN THE tinygnu TAR FILE
+#cp -v iso9660fs.static iso/hurd/
+#chmod +rx iso/hurd/iso9660fs.static
+#chown root:root iso/hurd/iso9660fs.static
+#ls -l iso/hurd/iso9660fs.static
+
+#copy hacked gnumach into iso. NOT REQUIRED. UNHASH ALL THESE IF YOU DONT HAVE THEM IN THE tinygnu TAR FILE
+#cp -v gnumach.gz iso/boot/
+#chown root:root iso/boot/gnumach.gz
+#ls -l iso/boot/gnumach.gz
+
+#copy bootloader files into iso
+mkdir -p iso/boot/grub
+cp -v stage2_eltorito iso/boot/grub
+cp menu.lst iso/boot/grub/menu.lst
+
+#copy ramdisk
+cp ramdskcreate.sh iso/
+cp setuprd.sh iso/
+
+#copy hacked runsystem into iso
+mv iso/libexec/runsystem iso/libexec/old_runsystem
+cp -vp runsystem iso/libexec/runsystem
+chmod +rx iso/libexec/runsystem
+chown root:root iso/libexec/runsystem
+ls -l iso/libexec/runsystem
+
+#copy hacked rc into iso
+mv iso/libexec/rc iso/libexec/old_rc
+cp -vp rc iso/libexec/rc
+chmod +rx iso/libexec/rc
+chown root:root iso/libexec/rc
+ls -l iso/libexec/rc
+
+#copy the educational material
+#cp -vp README.1st iso/
+#cp -vp README.2nd iso/
+
+#make files that translators will sit on. UNHASH ALL THESE IF YOU DONT HAVE THEM IN THE tinygnu TAR FILE
+#touch iso/dev/console # to put the console on
+#touch iso/tmp/console # to put the console on
+#touch iso/dev/time # so that /hurd/storeio can sit on it
+#touch iso/dev/null # so that /hurd/null can sit on it
+#touch iso/dev/zero # so that /hurd/storeio can sit on it
+
+#rm -vf iso/tmpfs 2>/dev/null
+
+#make the iso
+isoname=hurd-tiny-cd-mark-8.iso
+mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot \
+-boot-load-size 4 -boot-info-table -o $isoname iso/
+
+#cleanup. UNHASH if you want iso folder empty. For experiment purpose its always good to look into iso dir.
+#rm -f stage2_eltorito
+#rm -f menu.lst
+#rm -f runsystem
+#rm -f rc
+#rm -f iso9660fs.static
+#rm -f README.1st
+#rm -f README.2nd
+#rm -f hurd.ti
+#rm -f motd
+#rm -rf iso
+#rm -f gnumach.gz
+#gzip $isoname
+echo $isoname
